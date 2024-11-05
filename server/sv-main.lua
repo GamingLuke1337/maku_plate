@@ -1,16 +1,17 @@
 local inventory = exports.ox_inventory
 
+-- Server event to remove license plate
 RegisterNetEvent('maku_plate:server:takeoff', function(netId)
     local source = source
 
-    if not inventory:CanCarryItem(source, PLATE_ITEM) then
+    if not inventory:CanCarryItem(source, 'vehicle_plate') then
         print('^1[error]^0 inventory full, cannot take off plate')
         return
     end
 
     local vehicle = NetworkGetEntityFromNetworkId(netId)
     local plate = GetVehicleNumberPlateText(vehicle)
-    if plate == '' or plate == EMPTY_PLATE then
+    if plate == '' or plate == 'NO_PLATE' then
         print('^1[error]^0 plate not found on vehicle')
         return
     end
@@ -21,33 +22,28 @@ RegisterNetEvent('maku_plate:server:takeoff', function(netId)
         return
     end
 
-    local vehicleType = GetVehicleType(vehicle)
-    if not ALLOWED_TYPES[vehicleType] then
-        print('^1[error]^0 vehicle type not allowed')
-        return
-    end
-
-    startProgressbar('Taking off plate', 5000, source)
+    startProgressbar('Removing license plate', 5000, source)
     while getProgressbarStatus(source) == true do
         Citizen.Wait(500)
     end
 
-    local status = getProgressbarStatus(source)
-    if status == ABORTED_PROGRESSBAR then
+    if getProgressbarStatus(source) == ABORTED_PROGRESSBAR then
         print('^1[error]^0 progressbar aborted')
         return
     end
     clearProgressbar(source)
 
+    -- Store the plate in the state bag and set it to an empty text to hide it
     Entity(vehicle).state.plate = plate
-    SetVehicleNumberPlateText(vehicle, '')
+    SetVehicleNumberPlateText(vehicle, '')  -- This hides the plate, but keeps it in the state bag
 
-    inventory:AddItem(source, PLATE_ITEM, 1, {
+    inventory:AddItem(source, 'vehicle_plate', 1, {
         plate = plate,
         description = plate
     })
 end)
 
+-- Server event to put on license plate
 RegisterNetEvent('maku_plate:server:puton', function(netId, plate)
     local source = source
 
@@ -68,7 +64,7 @@ RegisterNetEvent('maku_plate:server:puton', function(netId, plate)
     local items = inventory:GetInventoryItems(source)
     local found = false
     for _, item in pairs(items) do
-        if item.name == PLATE_ITEM and item.metadata ~= nil and item.metadata.plate == plate then
+        if item.name == 'vehicle_plate' and item.metadata ~= nil and item.metadata.plate == plate then
             found = true
             break
         end
@@ -78,25 +74,23 @@ RegisterNetEvent('maku_plate:server:puton', function(netId, plate)
         return
     end
 
-
-    startProgressbar('Putting on plate', 5000, source)
+    startProgressbar('Attaching license plate', 5000, source)
     while getProgressbarStatus(source) == true do
         Citizen.Wait(500)
     end
 
-    local status = getProgressbarStatus(source)
-    if status == ABORTED_PROGRESSBAR then
+    if getProgressbarStatus(source) == ABORTED_PROGRESSBAR then
         print('^1[error]^0 progressbar aborted')
         return
     end
     clearProgressbar(source)
 
-    local success = inventory:RemoveItem(source, PLATE_ITEM, 1, {
+    local success = inventory:RemoveItem(source, 'vehicle_plate', 1, {
         plate = plate,
         description = plate
     })
     if success then
-        SetVehicleNumberPlateText(vehicle, plate)
+        SetVehicleNumberPlateText(vehicle, statebagPlate)  -- Reattach the original plate
     else
         print('^1[error]^0 failed to remove item from inventory')
     end
