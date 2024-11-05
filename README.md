@@ -19,7 +19,7 @@ If you encounter any issues, feel free to let me know here or reach out on my Di
 ```
 
 -   Move `assets/vehicle_plate.png` to `ox_inventory/web/images` folder
--   Move `assets/get_plate_override.lua` to `ox_inventory`
+-   Move `assets/plate.lua.lua` to `ox_inventory`
 -   Set `plate.lua` as a shared script in `ox_inventory/fxmanifest.lua`
 
   
